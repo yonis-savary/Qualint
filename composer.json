@@ -1,0 +1,28 @@
+{
+    "name": "yonissavary/qualint",
+    "description": "PHP Archaic Linter / Clean code Checker",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "YonisSavary\\Qualint\\": "src/",
+            "YonisSavary\\Qualint\\Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "YonisSavary",
+            "email": "yonissavary@outlook.fr"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "yonissavary/barn": "dev-main"
+    },
+    "repositories": {
+        "repo-name": {
+            "type": "vcs",
+            "url": "https://github.com/YonisSavary/Barn"
+        }
+    }
+}
