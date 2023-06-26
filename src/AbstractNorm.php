@@ -19,6 +19,5 @@ abstract class AbstractNorm
 
     public function checkFile(Analyser $analyser)
     {
-
     }
 }

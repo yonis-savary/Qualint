@@ -12,9 +12,9 @@ use YonisSavary\Qualint\Norms\ValidWhitespaces;
 
 class Qualint
 {
-    const BEHAVE_PREVEW     = 0;
-    const BEHAVE_COMMIT     = 1;
-    const BEHAVE_COMMIT_TMP = 2;
+    const BEHAVE_PREVIEW   = 0;
+    const BEHAVE_OVERWRITE = 1;
+    const BEHAVE_BACKUP    = 2;
 
     protected array $files = [];
 
@@ -27,12 +27,10 @@ class Qualint
     /** @var array<AbstractNorm> */
     protected array $norms = [];
 
-    protected array $warnings = [];
-
     protected Analyser $activeAnalyser;
     protected int $behavior;
 
-    public function __construct(array $files, array $loggers=[], int $behavior=self::BEHAVE_PREVEW)
+    public function __construct(array $files, array $loggers=[], int $behavior=self::BEHAVE_PREVIEW)
     {
         $this->files = $files;
         $this->loggers = $loggers;
@@ -70,7 +68,6 @@ class Qualint
         $this->loggers[] = $function;
     }
 
-
     public function log(string ...$lines)
     {
         foreach ($this->loggers as $logger)
@@ -84,7 +81,7 @@ class Qualint
     {
         foreach ($this->norms as $norm)
         {
-            $this->log('Checking norm ['.$norm::class."]\n");
+            $this->log('Checking norm ['.$norm::class."]");
             foreach ($this->pool as $_ => &$analyser)
             {
                 $this->activeAnalyser = &$analyser;
@@ -94,13 +91,13 @@ class Qualint
 
         switch ($this->behavior)
         {
-            case self::BEHAVE_COMMIT:
+            case self::BEHAVE_OVERWRITE:
                 $this->commitDirect();
                 break;
-                case self::BEHAVE_PREVEW:
+                case self::BEHAVE_PREVIEW:
                 $this->preview();
                 break;
-            case self::BEHAVE_COMMIT_TMP:
+            case self::BEHAVE_BACKUP:
                 $this->commitToTemp();
                 break;
         }
@@ -112,7 +109,7 @@ class Qualint
     ) {
         $analyser = $this->activeAnalyser;
         $text = $analyser->getAnalysisText();
-        $this->log("  $message\n");
+        $this->log("  ". $analyser->getPath()  ." ".$message);
         $mutator($text);
         $analyser->update($text);
     }
@@ -122,42 +119,65 @@ class Qualint
         return $this->activeAnalyser;
     }
 
-
-    public function logWarnings()
+    public function commitDirect()
     {
-        foreach ($this->warnings as $md5 => $changes)
+        foreach ($this->pool as $file)
         {
-            echo "$md5 :\n";
-            foreach ($changes as $change)
-                $this->log(" - ".$change["message"]);
+            if (!$file->gotChanges())
+                continue;
+
+            $baseFile = $file->getPath();
+            $newContent = (string) $file->getAnalysisText();
+
+            $this->log("Overwriting file at [$baseFile]\n");
+
+            file_put_contents($baseFile, $newContent);
         }
     }
 
-    public function getWarnings(): array
-    {
-        return array_map(fn($e) => $e["message"], $this->warnings);
-    }
-
-    public function commitDirect()
-    {
-
-    }
     public function preview()
     {
+        $this->log("\nChanges that would be commited :");
+        foreach ($this->pool as $file)
+        {
+            if (!$file->gotChanges())
+                continue;
 
+            $baseFile = $file->getPath();
+            $newContent = (string) $file->getAnalysisText();
+
+            $diffFile = uniqid($baseFile);
+
+            file_put_contents($diffFile, $newContent);
+
+            $this->log(sprintf("%s : %s (%sko) => %s (%sko)\n",
+                $baseFile,
+                md5_file($baseFile),
+                round(filesize($baseFile) / 1024, 2),
+                md5_file($diffFile),
+                round(filesize($diffFile) / 1024, 2)
+            ));
+
+            unlink($diffFile);
+        }
     }
 
     public function commitToTemp()
     {
-        $outdir = "./temp-qualint-output";
-        if (!is_dir($outdir))
-            mkdir($outdir);
-
+        $this->log("\nSaving changes and putting originals to backup files :");
         foreach ($this->pool as $file)
         {
-            $out = tempnam($outdir, "output");
-            file_put_contents($out, $file->getAnalysisText());
+            if (!$file->gotChanges())
+                continue;
+
+            $baseFile = $file->getPath();
+            $newContent = (string) $file->getAnalysisText();
+
+            $backupFile = uniqid($baseFile);
+            $this->log("Writing backup file at [$backupFile]\n");
+
+            file_put_contents($backupFile, file_get_contents($baseFile));
+            file_put_contents($baseFile, $newContent);
         }
     }
-
 }

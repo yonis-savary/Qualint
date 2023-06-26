@@ -32,7 +32,8 @@ class ValidNamespace extends AbstractNorm
 
         $this->normalizePath($expectedNamespace);
         $expectedNamespace = str_replace($cwd, "", $expectedNamespace);
-        if (str_starts_with($expectedNamespace, "/"));
+
+        if (str_starts_with($expectedNamespace, "/"))
             $expectedNamespace = substr($expectedNamespace, 1);
 
         if ($expectedNamespace === $actualNamespaceString)

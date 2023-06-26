@@ -21,6 +21,9 @@ class ValidFunctionName extends AbstractNorm
         while (strpos($newName, '_') > 1)
             $newName = preg_replace_callback('/([^_])_+(.)/', fn($m) => $m[1] . strtoupper($m[2]), $newName);
 
+        if ($newName === $name)
+            return;
+
         $this->parent->mutate(
             "Bad method name [$name] (Replaced by $newName)",
             function(AnalysisText $text) use ($function, $newName) {

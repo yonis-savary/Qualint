@@ -1,0 +1,125 @@
+#!/usr/bin/env php
+<?php
+
+namespace YonisSavary\Qualint;
+
+include $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
+
+class CommandRunner
+{
+    protected static $isVerbose = 0;
+    protected static $argv = [];
+
+    public static function displayHelp()
+    {
+        echo join("\n", [
+            'Qualint command by Yonis SAVARY (YonisSavary on github)',
+            '',
+            'Console options:',
+            '--help    Display this help',
+            '--verbose Enable verbose/debug mode',
+            '',
+            'Output options:',
+            '--behavior=<mode>     Output mode',
+            '           PREVIEW    (Default) Display in console needed changes',
+            '           BACKUP     Make a backup file next to the original',
+            '           OVERWRITE  Directly overwrite the file ',
+        ])."\n\n";
+        die;
+    }
+
+    public static function log(string $log)
+    {
+        if (!self::$isVerbose)
+            return ;
+
+        echo $log . "\n";
+    }
+
+    public static function argIsPresent(string $long)
+    {
+        $long = "--$long";
+
+        if (in_array($long, self::$argv))
+            return true;
+
+        foreach (self::$argv as $argument)
+        {
+            if (str_starts_with($argument, $long))
+                return true;
+        }
+        return false;
+    }
+
+    public static function argValue(string $long)
+    {
+        $value = null;
+        $long = "--$long";
+        foreach (self::$argv as $arg)
+        {
+            if (!str_starts_with($arg, $long))
+                continue;
+
+            $value = substr($arg, strlen($long));
+            $value = preg_replace("/^=[\"']?|[\"']?$/", "", $value);
+        }
+        if ($value)
+            return $value;
+        return null;
+    }
+
+    public static function exploreDirectory(string $path)
+    {
+        $results = [];
+        foreach (array_slice(scandir($path), 2) as $dirOfFileName)
+        {
+            $dirOfFile = $path . DIRECTORY_SEPARATOR . $dirOfFileName;
+            if (str_ends_with($dirOfFile, ".php") && is_file($dirOfFile))
+                $results[] = $dirOfFile;
+            else if (is_dir($dirOfFile) && $dirOfFileName !== "vendor")
+                array_push($results, ...self::exploreDirectory($dirOfFile));
+        }
+        return $results;
+    }
+
+    public static function launch($argv)
+    {
+        self::$argv = array_slice($argv, 1);
+
+        if (self::argIsPresent("help"))
+            self::displayHelp();
+
+        self::$isVerbose = self::argIsPresent("verbose");
+
+        $behavior = self::argValue("behavior") ?? "PREVIEW";
+        if (!defined(Qualint::class."::BEHAVE_".$behavior))
+            die("Undefined behavior [$behavior]\n");
+
+        self::log("Using behavior [$behavior]");
+        $behavior = constant(Qualint::class."::BEHAVE_".$behavior);
+
+        $dirToAnalyse = [];
+        foreach (self::$argv as $arg)
+        {
+            if (str_starts_with($arg, "-"))
+                continue;
+
+            if (!is_dir($arg))
+            {
+                self::log("[$arg] directory not found");
+                continue;
+            }
+            $dirToAnalyse[] = $arg;
+        }
+
+
+        foreach ($dirToAnalyse as $directory)
+        {
+            self::log("Analysing [$directory]");
+            $instance = new Qualint(self::exploreDirectory($directory), [[self::class, "log"]], $behavior);
+            $instance->launch();
+        }
+    }
+}
+
+CommandRunner::launch($argv);

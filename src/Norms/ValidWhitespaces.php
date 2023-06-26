@@ -38,7 +38,7 @@ class ValidWhitespaces extends AbstractNorm
             list($string, $offset) = $match[0];
             $this->parent->mutate(
                 "Removing excessing whitespace before bracket",
-                fn(AnalysisText $text) => $text->replaceSubstring($offset, $offset + strlen($string), "\n".$match[1][0]."}")
+                fn(AnalysisText $text) => $text->replaceSubstring($offset, $offset + strlen($string), "\n".($match[1][0] ?? '')."}")
             );
             $content = $this->parent->getActiveAnalyser()->getProcessedContent();
         }
