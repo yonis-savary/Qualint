@@ -26,6 +26,10 @@ class ValidUses extends AbstractNorm
             preg_match_all('/\b'.$classname.'\b/', $analyser->getAnalysisText(), $matches);
 
             $isUsed = count($matches[0]) > 1;
+
+            if (class_exists($class) && $isUsed)
+                continue;
+
             if (!$isUsed)
             {
                 $this->parent->mutate(
