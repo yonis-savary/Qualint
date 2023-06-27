@@ -19,12 +19,12 @@
     "require": {
         "yonissavary/barn": "dev-main"
     },
-    "repositories": {
-        "repo-name": {
+    "repositories": [
+        {
             "type": "vcs",
             "url": "https://github.com/YonisSavary/Barn"
         }
-    },
+    ],
     "bin": [
         "bin/qualint"
     ]

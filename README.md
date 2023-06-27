@@ -6,8 +6,17 @@ PHP Archaic Linter / Clean Code checker
 
 ## Installation
 
+Insert this into your `composer.json` file
+```json
+"repositories": [
+    {
+        "type": "vcs",
+        "url": "https://github.com/YonisSavary/Qualint"
+    }
+]
+```
+
 ```bash
-composer config repositories.repo-name vcs https://github.com/YonisSavary/Qualint
 composer require yonissavary/qualint
 ```
 
