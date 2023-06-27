@@ -26,14 +26,15 @@ class ValidFunctionName extends AbstractNorm
 
         $this->parent->mutate(
             "Bad method name [$name] (Replaced by $newName)",
-            function(AnalysisText $text) use ($function, $newName) {
+            function(AnalysisText &$text) use ($function, $newName) {
                 $name = $function->getName();
                 $line = $function->getStartLine();
 
                 $original = $text->captureLines($line, $line);
                 $original = str_replace($name, $newName, $original);
                 $text->replaceLines($line, $line, $original);
-            }
+            },
+            line: $function->getStartLine()
         );
     }
 

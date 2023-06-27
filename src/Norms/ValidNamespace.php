@@ -14,6 +14,12 @@ class ValidNamespace extends AbstractNorm
         $path = preg_replace('/\/{2,}/', '/', $path);
     }
 
+    protected function normalizeNamespace(string &$path)
+    {
+        $path = str_replace('/', '\\', $path);
+        $path = preg_replace('/\\\\{2,}/', '\\', $path);
+    }
+
     public function checkFile(Analyser $analyser)
     {
         if (!($actualNamespace = $analyser->getNamespace()))
@@ -30,7 +36,7 @@ class ValidNamespace extends AbstractNorm
 
         $expectedNamespace = substr($expectedNamespace, 0, $basenamePosition-1);
 
-        $this->normalizePath($expectedNamespace);
+        $this->normalizeNamespace($expectedNamespace);
         $expectedNamespace = str_replace($cwd, "", $expectedNamespace);
 
         if (str_starts_with($expectedNamespace, "/"))
@@ -45,7 +51,8 @@ class ValidNamespace extends AbstractNorm
             {
                 $line = $actualNamespace->line;
                 $file->replaceLines($line, $line, $expectedNamespace ? "namespace $expectedNamespace;": "");
-            }
+            },
+            line: $actualNamespace->line
         );
     }
 }

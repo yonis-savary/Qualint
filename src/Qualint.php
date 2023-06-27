@@ -105,11 +105,17 @@ class Qualint
 
     public function mutate(
         string $message,
-        callable $mutator
+        callable $mutator,
+        ?int $line=null,
+        ?int $offset=null
     ) {
         $analyser = $this->activeAnalyser;
         $text = $analyser->getAnalysisText();
-        $this->log("  ". $analyser->getPath()  ." ".$message);
+
+        if ($offset) $line = $text->offsetLine($offset);
+        $lineStr = $line ? ":$line" : "";
+
+        $this->log("  ". $analyser->getPath() . $lineStr ." ".$message);
         $mutator($text);
         $analyser->update($text);
     }
@@ -150,7 +156,7 @@ class Qualint
 
             file_put_contents($diffFile, $newContent);
 
-            $this->log(sprintf("%s : %s (%sko) => %s (%sko)\n",
+            $this->log(sprintf("%s : %s (%sko) => %s (%sko)",
                 $baseFile,
                 md5_file($baseFile),
                 round(filesize($baseFile) / 1024, 2),

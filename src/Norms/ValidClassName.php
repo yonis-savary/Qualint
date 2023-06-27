@@ -22,7 +22,7 @@ class ValidClassName extends AbstractNorm
 
             $this->parent->mutate(
                 "Bad class name at [$name] (replaced by $newName)",
-                function(AnalysisText $text) use ($class, $newName)
+                function(AnalysisText &$text) use ($class, $newName)
                 {
                     $startLine = $class->getStartLine();
                     $className = $class->getShortName();
@@ -30,7 +30,8 @@ class ValidClassName extends AbstractNorm
                     $original = $text->captureLines($startLine, $startLine);
                     $transformed = str_replace($className, $newName, $original);
                     $text->replaceLines($startLine, $startLine, $transformed);
-                }
+                },
+                line: $class->getStartLine()
             );
         }
     }
