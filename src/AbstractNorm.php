@@ -3,7 +3,6 @@
 namespace YonisSavary\Qualint;
 
 use YonisSavary\Barn\Analysis\Analyser;
-use YonisSavary\Barn\Analysis\AnalyserPool;
 use YonisSavary\Qualint\Qualint;
 
 abstract class AbstractNorm

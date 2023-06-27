@@ -9,6 +9,7 @@ class CommandRunner
 {
     protected static $isVerbose = 0;
     protected static $argv = [];
+    protected static $limit = null;
 
     public static function displayHelp()
     {
@@ -24,6 +25,7 @@ class CommandRunner
             '           PREVIEW    (Default) Display in console needed changes',
             '           BACKUP     Make a backup file next to the original',
             '           OVERWRITE  Directly overwrite the file ',
+            '           CLONE      Write in a clone next to the original file ',
         ])."\n\n";
         die;
     }
@@ -68,16 +70,19 @@ class CommandRunner
         return null;
     }
 
-    public static function exploreDirectory(string $path)
+    public static function exploreDirectory(string $path, int $sizeAcc=0)
     {
         $results = [];
         foreach (array_slice(scandir($path), 2) as $dirOfFileName)
         {
+            if (self::$limit && $sizeAcc + count($results) >= self::$limit)
+                return $results;
+
             $dirOfFile = $path . DIRECTORY_SEPARATOR . $dirOfFileName;
             if (str_ends_with($dirOfFile, ".php") && is_file($dirOfFile))
                 $results[] = $dirOfFile;
             else if (is_dir($dirOfFile) && $dirOfFileName !== "vendor")
-                array_push($results, ...self::exploreDirectory($dirOfFile));
+                array_push($results, ...self::exploreDirectory($dirOfFile, count($results) + $sizeAcc));
         }
         return $results;
     }
@@ -85,6 +90,9 @@ class CommandRunner
     public static function launch($argv)
     {
         self::$argv = array_slice($argv, 1);
+
+        $limit = &self::$limit;
+        $limit = intval(self::argValue("limit"));
 
         if (self::argIsPresent("help"))
             self::displayHelp();
@@ -95,7 +103,7 @@ class CommandRunner
         if (!defined(Qualint::class."::BEHAVE_".$behavior))
             die("Undefined behavior [$behavior]\n");
 
-        self::log("Using behavior [$behavior]");
+        self::log("Using behavior [$behavior]\n");
         $behavior = constant(Qualint::class."::BEHAVE_".$behavior);
 
         $dirToAnalyse = [];
@@ -112,13 +120,22 @@ class CommandRunner
             $dirToAnalyse[] = $arg;
         }
 
-
+        $files = [];
         foreach ($dirToAnalyse as $directory)
         {
-            self::log("Analysing [$directory]");
-            $instance = new Qualint(self::exploreDirectory($directory), [[self::class, "log"]], $behavior);
-            $instance->launch();
+            array_push($files, ...self::exploreDirectory($directory));
+            if ($limit && count($files) >= $limit)
+                break;
         }
+
+        if ($limit)
+            $files = array_slice($files, 0, $limit);
+
+        if (!count($files))
+            die("Not file found!\n");
+
+        $instance = new Qualint($files, [[self::class, "log"]], $behavior);
+        $instance->launch();
     }
 }
 

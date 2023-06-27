@@ -8,6 +8,8 @@ use YonisSavary\Qualint\AbstractNorm;
 use YonisSavary\Qualint\Norms\ValidClassName;
 use YonisSavary\Qualint\Norms\ValidFunctionName;
 use YonisSavary\Qualint\Norms\ValidNamespace;
+use YonisSavary\Qualint\Norms\ValidQuotes;
+use YonisSavary\Qualint\Norms\ValidUses;
 use YonisSavary\Qualint\Norms\ValidWhitespaces;
 
 class Qualint
@@ -15,6 +17,7 @@ class Qualint
     const BEHAVE_PREVIEW   = 0;
     const BEHAVE_OVERWRITE = 1;
     const BEHAVE_BACKUP    = 2;
+    const BEHAVE_CLONE     = 3;
 
     protected array $files = [];
 
@@ -30,6 +33,8 @@ class Qualint
     protected Analyser $activeAnalyser;
     protected int $behavior;
 
+    protected int $textPad = 0;
+
     public function __construct(array $files, array $loggers=[], int $behavior=self::BEHAVE_PREVIEW)
     {
         $this->files = $files;
@@ -40,13 +45,19 @@ class Qualint
             ValidFunctionName::class,
             ValidClassName::class,
             ValidNamespace::class,
+            ValidUses::class,
+            ValidQuotes::class,
             ValidWhitespaces::class,
         ] as $class)
             $this->addNorm($class);
 
         $this->pool = [];
+        $this->textPad = 0;
         foreach ($files as $file)
+        {
+            $this->textPad = max($this->textPad, strlen($file));
             $this->pool[md5($file)] = Analyser::fromFile($file);
+        }
     }
 
     public function addNorm(string $class)
@@ -81,7 +92,7 @@ class Qualint
     {
         foreach ($this->norms as $norm)
         {
-            $this->log('Checking norm ['.$norm::class."]");
+            $this->log('Checking norm ['.$norm::class.']');
             foreach ($this->pool as $_ => &$analyser)
             {
                 $this->activeAnalyser = &$analyser;
@@ -100,6 +111,8 @@ class Qualint
             case self::BEHAVE_BACKUP:
                 $this->commitToTemp();
                 break;
+            case self::BEHAVE_CLONE:
+                $this->commitToClone();
         }
     }
 
@@ -113,9 +126,18 @@ class Qualint
         $text = $analyser->getAnalysisText();
 
         if ($offset) $line = $text->offsetLine($offset);
-        $lineStr = $line ? ":$line" : "";
+        $lineStr = $line ? ":$line" : '';
 
-        $this->log("  ". $analyser->getPath() . $lineStr ." ".$message);
+        $tp = $this->textPad;
+        $path = $analyser->getPath();
+        $this->log(
+            sprintf(
+                ' - [%s%s]%s %s',
+                $path,
+                $lineStr,
+                str_repeat(' ', max(0, $tp+5 -(strlen($path) + strlen($lineStr)))),
+                $message
+            ));
         $mutator($text);
         $analyser->update($text);
     }
@@ -135,7 +157,7 @@ class Qualint
             $baseFile = $file->getPath();
             $newContent = (string) $file->getAnalysisText();
 
-            $this->log("Overwriting file at [$baseFile]\n");
+            $this->log("Overwriting file at [$baseFile]");
 
             file_put_contents($baseFile, $newContent);
         }
@@ -156,8 +178,10 @@ class Qualint
 
             file_put_contents($diffFile, $newContent);
 
-            $this->log(sprintf("%s : %s (%sko) => %s (%sko)",
+            $tp = $this->textPad;
+            $this->log(sprintf(' - %s%s : %s (%sko) => %s (%sko)',
                 $baseFile,
+                str_repeat(' ', $tp-strlen($baseFile)),
                 md5_file($baseFile),
                 round(filesize($baseFile) / 1024, 2),
                 md5_file($diffFile),
@@ -179,11 +203,29 @@ class Qualint
             $baseFile = $file->getPath();
             $newContent = (string) $file->getAnalysisText();
 
-            $backupFile = uniqid($baseFile);
-            $this->log("Writing backup file at [$backupFile]\n");
+            $backupFile = uniqid($baseFile) . '.php';
+            $this->log("Writing backup file at [$backupFile]");
 
             file_put_contents($backupFile, file_get_contents($baseFile));
             file_put_contents($baseFile, $newContent);
+        }
+    }
+
+    public function commitToClone()
+    {
+        $this->log("\nSaving changes in clone files :");
+        foreach ($this->pool as $file)
+        {
+            if (!$file->gotChanges())
+                continue;
+
+            $baseFile = $file->getPath();
+            $newContent = (string) $file->getAnalysisText();
+
+            $cloneFile = uniqid($baseFile) . '.php';
+            $this->log("Writing clone file at [$cloneFile]");
+
+            file_put_contents($cloneFile, $newContent);
         }
     }
 }

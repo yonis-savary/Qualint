@@ -1,6 +1,7 @@
 <?php
 
-use YonisSavary\Qualint\Qualint;
+use YonisSavary\FalseLint\Qualint;
+use YonisSavary\MyLint\AbstractNorm;
 
 require_once "../vendor/autoload.php";
 

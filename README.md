@@ -39,6 +39,7 @@ Otherwise, if you are sure that changes won't break your code, execute
 ```bash
 vendor/bin/qualint --behavior=OVERWRITE --verbose
 ```
+(It is advised to commit your code before executing this command as it can break your code)
 
 For more see :
 ```bash

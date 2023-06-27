@@ -17,7 +17,7 @@ class ValidWhitespaces extends AbstractNorm
         {
             list($string, $offset) = $match[0];
             $this->parent->mutate(
-                "Removing excessing whitespace",
+                'Removing excessing whitespace',
                 fn(AnalysisText &$text) => $text->replaceSubstring($offset, $offset + strlen($string), "\n\n"),
                 offset:$offset
             );
@@ -28,7 +28,7 @@ class ValidWhitespaces extends AbstractNorm
         {
             list($string, $offset) = $match[0];
             $this->parent->mutate(
-                "Removing excessing whitespace after bracket",
+                'Removing excessing whitespace after bracket',
                 fn(AnalysisText &$text) => $text->replaceSubstring($offset, $offset + strlen($string), "{\n"),
                 offset:$offset
             );
@@ -39,7 +39,7 @@ class ValidWhitespaces extends AbstractNorm
         {
             list($string, $offset) = $match[0];
             $this->parent->mutate(
-                "Removing excessing whitespace before bracket",
+                'Removing excessing whitespace before bracket',
                 fn(AnalysisText &$text) => $text->replaceSubstring($offset, $offset + strlen($string), preg_replace("/\n{2,}/", "\n", $string)),
                 offset:$offset
             );

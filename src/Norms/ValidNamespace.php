@@ -37,9 +37,9 @@ class ValidNamespace extends AbstractNorm
         $expectedNamespace = substr($expectedNamespace, 0, $basenamePosition-1);
 
         $this->normalizeNamespace($expectedNamespace);
-        $expectedNamespace = str_replace($cwd, "", $expectedNamespace);
+        $expectedNamespace = str_replace($cwd, '', $expectedNamespace);
 
-        if (str_starts_with($expectedNamespace, "/"))
+        if (str_starts_with($expectedNamespace, '/'))
             $expectedNamespace = substr($expectedNamespace, 1);
 
         if ($expectedNamespace === $actualNamespaceString)
@@ -50,7 +50,7 @@ class ValidNamespace extends AbstractNorm
             function(AnalysisText &$file) use ($actualNamespace, $expectedNamespace)
             {
                 $line = $actualNamespace->line;
-                $file->replaceLines($line, $line, $expectedNamespace ? "namespace $expectedNamespace;": "");
+                $file->replaceLines($line, $line, $expectedNamespace ? "namespace $expectedNamespace;": '');
             },
             line: $actualNamespace->line
         );
