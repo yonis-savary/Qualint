@@ -38,7 +38,7 @@ class ValidUses extends AbstractNorm
                 continue;
             }
 
-            if (class_exists($class))
+            if (class_exists($class) || interface_exists($class))
                 continue;
 
             $found = false;
