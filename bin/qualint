@@ -3,6 +3,8 @@
 
 namespace YonisSavary\Qualint;
 
+use Throwable;
+
 include $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
 
 class CommandRunner
@@ -89,15 +91,32 @@ class CommandRunner
 
     public static function launch($argv)
     {
-        self::$argv = array_slice($argv, 1);
-
-        $limit = &self::$limit;
-        $limit = intval(self::argValue("limit"));
+        self::$argv = $argv;
 
         if (self::argIsPresent("help"))
             self::displayHelp();
 
         self::$isVerbose = self::argIsPresent("verbose");
+
+        if ($bootstrap = self::argValue("bootstrap"))
+        {
+            if (!is_file($bootstrap))
+                die("Cannot find bootstrap file [$bootstrap]");
+
+            try
+            {
+                require_once $bootstrap;
+            }
+            catch(Throwable $err)
+            {
+                die("Cannot require bootstrap file [$bootstrap] : ". $err->getMessage());
+            }
+        }
+
+        $limit = &self::$limit;
+        $limit = intval(self::argValue("limit"));
+        if ($limit)
+            self::log("Using file limit : $limit");
 
         $behavior = self::argValue("behavior") ?? "PREVIEW";
         if (!defined(Qualint::class."::BEHAVE_".$behavior))
@@ -139,4 +158,4 @@ class CommandRunner
     }
 }
 
-CommandRunner::launch($argv);
+CommandRunner::launch(array_slice($argv, 1));
