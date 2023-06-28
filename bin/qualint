@@ -82,9 +82,16 @@ class CommandRunner
 
             $dirOfFile = $path . DIRECTORY_SEPARATOR . $dirOfFileName;
             if (str_ends_with($dirOfFile, ".php") && is_file($dirOfFile))
+            {
+                if (!str_starts_with(file_get_contents($dirOfFile), "<?php"))
+                    continue;
+
                 $results[] = $dirOfFile;
+            }
             else if (is_dir($dirOfFile) && $dirOfFileName !== "vendor")
+            {
                 array_push($results, ...self::exploreDirectory($dirOfFile, count($results) + $sizeAcc));
+            }
         }
         return $results;
     }

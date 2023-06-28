@@ -44,7 +44,7 @@ class ValidUses extends AbstractNorm
             $found = false;
             foreach (get_declared_classes() as $possibleClass)
             {
-                if (!str_ends_with($possibleClass, $classname))
+                if (!str_ends_with($possibleClass, "\\".$classname))
                     continue;
 
                 $replacement = "use $possibleClass";
